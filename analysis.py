@@ -33,8 +33,11 @@ def safe_parse_json(response_text):
 #  Watchlist loading (tickers + name map)
 # ============================================================
 def load_watchlist():
-    with open(WATCHLIST_FILE, "r") as f:
-        raw = json.load(f)
+    with open(WATCHLIST_FILE, "r", encoding="utf-8") as f:
+        raw_text = f.read()
+    # Remove control characters that crash JSON
+    cleaned = re.sub(r'[\x00-\x1f]', '', raw_text)
+    raw = json.loads(cleaned)
 
     tickers = []
     name_map = {}
@@ -49,6 +52,8 @@ def load_watchlist():
         if name:
             name_map[ticker] = name
     return tickers, name_map
+
+
 
 # ============================================================
 #  Yahoo Finance helpers
