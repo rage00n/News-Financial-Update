@@ -2,7 +2,7 @@ import time
 import requests
 from analysis import run_full_scan, fetch_news, run_combined
 
-TOKEN = "YOUR_TOKEN"   # same token
+TOKEN = "7970870938:AAEYTsNFz3Bvv0Oo2UiKaU02xC8yIR6DLt8"   # same token
 
 def send_message(chat_id, text, parse_mode=None):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
