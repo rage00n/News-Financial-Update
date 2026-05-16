@@ -4,3 +4,4 @@ feedparser
 yfinance
 pandas
 requests
+gtts
