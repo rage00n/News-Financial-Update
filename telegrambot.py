@@ -79,34 +79,34 @@ def webhook():
         if text.startswith("/scan") and not text.startswith("/scans"):
             try:
                 briefing = run_full_scan()
-                sender.send(chat_id, briefing)
+                send_telegram_message(chat_id, briefing)
             except Exception as e:
-                sender.send(chat_id, f"❌ Scan failed: {str(e)[:200]}")
+                send_telegram_message(chat_id, f"❌ Scan failed: {str(e)[:200]}")
 
         elif text.startswith("/news"):
             try:
                 news = fetch_news()
-                sender.send(chat_id, news, parse_mode="Markdown")
+                send_telegram_message(chat_id, news, parse_mode="Markdown")
             except Exception as e:
-                sender.send(chat_id, f"❌ News fetch failed: {str(e)[:200]}")
+                send_telegram_message(chat_id, f"❌ News fetch failed: {str(e)[:200]}")
 
         elif text.startswith("/voice"):
             try:
                 combined = run_combined()
-                sender.send(chat_id, combined)          # text first
+                send_telegram_message(chat_id, combined)          # text first
                 send_voice(chat_id, combined)           # then voice
             except Exception as e:
-                sender.send(chat_id, f"❌ Voice failed: {str(e)[:200]}")
+                send_telegram_message(chat_id, f"❌ Voice failed: {str(e)[:200]}")
 
         elif text.startswith("/scans"):
             try:
                 combined = run_combined()
-                sender.send(chat_id, combined, parse_mode="Markdown")
+                send_telegram_message(chat_id, combined, parse_mode="Markdown")
             except Exception as e:
-                sender.send(chat_id, f"❌ Combined scan failed: {str(e)[:200]}")
+                send_telegram_message(chat_id, f"❌ Combined scan failed: {str(e)[:200]}")
 
         elif text.startswith("/start"):
-            sender.send(chat_id,
+            send_telegram_message(chat_id,
                         "👋 Hi! Use:\n"
                         "/scan – extreme‑ticker analysis\n"
                         "/news – latest tech/Singapore headlines\n"
@@ -114,7 +114,7 @@ def webhook():
                         "/voice – same as /scans, but read aloud")
 
         else:
-            sender.send(chat_id, "Unknown command. Try /scan, /news, /scans, or /voice.")
+            send_telegram_message(chat_id, "Unknown command. Try /scan, /news, /scans, or /voice.")
 
     return jsonify({"status": "ok"})
 
