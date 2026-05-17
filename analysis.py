@@ -12,9 +12,12 @@ from datetime import datetime, timezone
 #  CONFIG
 # ============================================================
 
-ANTHROPIC_API_KEY = "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"          # your actual key
 WATCHLIST_FILE = "watchlist.json"
-
+import os
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+if not ANTHROPIC_API_KEY:
+    raise RuntimeError("ANTHROPIC_API_KEY environment variable is not set")
+    
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
