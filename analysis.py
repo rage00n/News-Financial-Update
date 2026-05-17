@@ -164,16 +164,29 @@ SG_FEEDS = [
     "https://www.businesstimes.com.sg/api/rss/sgx-news",
 ]
 
+import requests as req
+
+def fetch_feed_with_timeout(url, timeout=10):
+    """Download an RSS feed with a timeout, return parsed entries or None."""
+    try:
+        resp = req.get(url, timeout=timeout)
+        resp.raise_for_status()
+        feed = feedparser.parse(resp.text)
+        return feed.entries
+    except Exception:
+        return None
+
 def fetch_news():
     raw_global = []
     raw_sg = []
 
+
     # --- Global tech ---
     for url in GLOBAL_TECH_FEEDS:
         try:
-            feed = feedparser.parse(url)
-            if feed.entries:
-                for entry in feed.entries[:4]:
+            entries = fetch_feed_with_timeout(url, timeout=10)
+            if entries:
+                for entry in entries[:4]:
                     title = entry.get("title", "").strip()
                     link = entry.get("link", "")
                     if len(title) >= 20:
@@ -193,9 +206,9 @@ def fetch_news():
     # --- Singapore ---
     for url in SG_FEEDS:
         try:
-            feed = feedparser.parse(url)
-            if feed.entries:
-                for entry in feed.entries[:3]:
+            entries = fetch_feed_with_timeout(url, timeout=10)
+            if entries:
+                for entry in entries[:4]:
                     title = entry.get("title", "").strip()
                     link = entry.get("link", "")
                     if len(title) >= 20:
