@@ -4,7 +4,7 @@ import requests
 from flask import Flask
 from analysis import run_full_scan, fetch_news, run_combined
 
-TOKEN = "7970870938:AAEYTsNFz3Bvv0Oo2UiKaU02xC8yIR6DLt8"   # same token as before
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # ============================================================
 #  Flask health-check + optional webhook route (not used now)
