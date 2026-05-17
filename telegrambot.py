@@ -36,7 +36,6 @@ def send_message(chat_id, text, parse_mode=None):
         payload["parse_mode"] = parse_mode
     requests.post(url, json=payload, timeout=10)
 
-
 def process_update(update):
     msg = update.get("message")
     if not msg:
@@ -59,8 +58,10 @@ def process_update(update):
 #  Polling loop
 # ============================================================
 def polling_loop():
+    print("POLLING: Starting polling loop...", flush=True)
     last_update_id = 0
     while True:
+        print(f"POLLING: Fetching updates (last_id={last_update_id})...", flush=True)
         url = f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset={last_update_id+1}&timeout=10"
         try:
             resp = requests.get(url, timeout=15)
@@ -69,10 +70,11 @@ def polling_loop():
                 for upd in updates:
                     process_update(upd)
                     last_update_id = upd["update_id"]
-        except Exception as e:
-            print(f"Polling error: {e}")
-        time.sleep(1)
 
+        except Exception as e:
+            print(f"POLLING ERROR: {type(e).__name__}: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
 
 # ============================================================
 #  Main: start Flask in a thread, then run polling
