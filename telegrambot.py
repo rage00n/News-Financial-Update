@@ -3,9 +3,54 @@ import time
 import requests
 from flask import Flask
 from analysis import run_full_scan, fetch_news, run_combined
+
 import os
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+if TOKEN:
+    print(f"✅ TOKEN FOUND (starts with: {TOKEN[:8]}...)")
+else:
+    print("❌ TOKEN NOT FOUND! Set TELEGRAM_BOT_TOKEN in Render Environment.")
+
+anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+if anthropic_key:
+    print(f"✅ ANTHROPIC_KEY FOUND (starts with: {anthropic_key[:8]}...)")
+else:
+    print("❌ ANTHROPIC_KEY NOT FOUND! Set ANTHROPIC_API_KEY in Render Environment.")
+
+if TOKEN:
+    print("Testing getMe...")
+    try:
+        resp = requests.get(f"https://api.telegram.org/bot{TOKEN}/getMe", timeout=10)
+        print(f"getMe status: {resp.status_code} – {resp.json()}")
+    except Exception as e:
+        print(f"getMe error: {e}")
+
+    print("Testing getUpdates...")
+    try:
+        resp = requests.get(f"https://api.telegram.org/bot{TOKEN}/getUpdates", timeout=10)
+        data = resp.json()
+        print(f"getUpdates status: {resp.status_code}")
+        if data.get("result"):
+            for upd in data["result"]:
+                if "message" in upd:
+                    print(f"  Message from {upd['message']['chat']['id']}: {upd['message'].get('text', '')}")
+        else:
+            print("  No updates found (send /start now and re-deploy)")
+    except Exception as e:
+        print(f"getUpdates error: {e}")
+
+    print("Testing webhook info...")
+    try:
+        resp = requests.get(f"https://api.telegram.org/bot{TOKEN}/getWebhookInfo", timeout=10)
+        webhook_data = resp.json()
+        print(f"Webhook URL: {webhook_data.get('result', {}).get('url', '')}")
+        print(f"Pending updates: {webhook_data.get('result', {}).get('pending_update_count', '')}")
+    except Exception as e:
+        print(f"Webhook info error: {e}")
+
+print("Diagnostic complete.")
+# End script
 
 # ============================================================
 #  Flask health-check + optional webhook route (not used now)
