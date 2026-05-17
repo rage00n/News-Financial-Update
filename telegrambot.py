@@ -16,6 +16,10 @@ app = Flask(__name__)
 def ping():
     return "ok", 200
 
+@app.route("/")
+def home():
+    return "ok", 200
+
 # Keep the old webhook route if you ever want to switch back
 @app.route("/webhook", methods=["POST"])
 def webhook():
