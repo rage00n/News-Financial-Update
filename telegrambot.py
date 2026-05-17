@@ -3,6 +3,7 @@ import time
 import requests
 from flask import Flask
 from analysis import run_full_scan, fetch_news, run_combined
+import os
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
