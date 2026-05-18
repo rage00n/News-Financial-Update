@@ -87,16 +87,26 @@ def process_update(update):
         return
     chat_id = msg["chat"]["id"]
     text = msg.get("text", "")
-    if text == "/start":
-        send_message(chat_id, "👋 Hi! Use /scan, /news, /scans.")
-    elif text == "/scan":
-        send_message(chat_id, run_full_scan())
-    elif text == "/news":
-        send_message(chat_id, fetch_news(), parse_mode="Markdown")
-    elif text == "/scans":
-        send_message(chat_id, run_combined(), parse_mode="Markdown")
-    else:
-        send_message(chat_id, "Unknown command. Try /scan, /news, or /scans.")
+    
+    try:
+        if text == "/start":
+            send_message(chat_id, "👋 Hi! Use /scan, /news, /scans.")
+        elif text == "/scan":
+            send_message(chat_id, run_full_scan())
+        elif text == "/news":
+            send_message(chat_id, fetch_news(), parse_mode="Markdown")
+        elif text == "/scans":
+            send_message(chat_id, run_combined(), parse_mode="Markdown")
+        else:
+            send_message(chat_id, "Unknown command. Try /scan, /news, or /scans.")
+    except Exception as e:
+        error_msg = f"❌ Command failed: {type(e).__name__}"
+        try:
+            send_message(chat_id, error_msg)
+        except:
+            pass
+        print(f"Command error: {e}")
+        
 
 
 # ============================================================
