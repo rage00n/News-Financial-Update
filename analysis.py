@@ -162,6 +162,7 @@ SG_FEEDS = [
     "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB?hl=en-SG&gl=SG&ceid=SG:en",
     "https://www.channelnewsasia.com/rss/latestnews",
     "https://www.businesstimes.com.sg/api/rss/sgx-news",
+]
 
 import requests as req
 
