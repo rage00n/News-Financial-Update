@@ -166,15 +166,16 @@ SG_FEEDS = [
 
 import requests as req
 
-def fetch_feed_with_timeout(url, timeout=10):
-    """Download an RSS feed with a timeout, return parsed entries or None."""
+def fetch_feed_with_timeout(url, timeout=15):
+    """Download an RSS feed with a timeout, return parsed entries or empty list."""
     try:
         resp = req.get(url, timeout=timeout)
         resp.raise_for_status()
         feed = feedparser.parse(resp.text)
-        return feed.entries
-    except Exception:
-        return None
+        return feed.entries if feed.entries else []
+    except Exception as e:
+        print(f"RSS timeout/error for {url}: {e}")
+        return []
 
 def fetch_news():
     raw_global = []
@@ -186,7 +187,7 @@ def fetch_news():
         try:
             entries = fetch_feed_with_timeout(url, timeout=10)
             if entries:
-                for entry in entries[:4]:
+                for entry in entries[:6]:
                     title = entry.get("title", "").strip()
                     link = entry.get("link", "")
                     if len(title) >= 20:
@@ -201,7 +202,7 @@ def fetch_news():
         if item["title"] not in seen:
             seen.add(item["title"])
             deduped_global.append(item)
-    raw_global = deduped_global[:8]
+    raw_global = deduped_global[:12]
 
     # --- Singapore ---
     for url in SG_FEEDS:
@@ -223,7 +224,18 @@ def fetch_news():
         if item["title"] not in seen:
             seen.add(item["title"])
             deduped_sg.append(item)
-    raw_sg = deduped_sg[:6]
+    raw_sg = deduped_sg[:10]
+
+# If no Singapore headlines were fetched, try a fallback feed
+    if not raw_sg:
+        fallback_url = "https://www.channelnewsasia.com/rss/latestnews"
+        entries = fetch_feed_with_timeout(fallback_url, timeout=15)
+        for entry in entries[:3]:
+            title = entry.get("title", "").strip()
+            link = entry.get("link", "")
+            if len(title) >= 20:
+                title = re.sub(r'\s*[-|]\s*[^-|]+$', '', title).strip()
+                raw_sg.append({"title": title, "url": link})
 
     if not raw_global and not raw_sg:
         return "No noteworthy news available today."
@@ -261,8 +273,7 @@ For each selected headline, output exactly this format (including the emoji, lin
 🟢/🟡/🔴 • Headline text — [Read more](URL)
   _Why it matters: one short sentence explaining the investment impact._
   _Action: a one‑sentence suggestion an investor could consider._
-  📌 Watch: SYMBOL1 (Name1), SYMBOL2 (Name2)   (use the detected tickers if any, otherwise omit this line)
-
+  📌 Watch: For ANY selected headline where ticker mentions are detected, you MUST include the line: 📌 Watch: SYMBOL1 (Full Name), SYMBOL2 (Full Name), … using the names provided in the "Detected ticker mentions" list exactly as shown. If no names are available, use SYMBOL alone. If no tickers are detected for a headline, omit this line completely.
 Use these sentiment tags:
 - 🟢 if the news is market‑positive or bullish for the assets mentioned.
 - 🟡 if the impact is neutral, uncertain, or mixed.
