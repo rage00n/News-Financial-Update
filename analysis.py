@@ -204,36 +204,32 @@ def fetch_news():
             deduped_global.append(item)
     raw_global = deduped_global[:12]
 
-    # --- Singapore ---
-    for url in SG_FEEDS:
-        try:
-            entries = fetch_feed_with_timeout(url, timeout=10)
-            if entries:
-                for entry in entries[:4]:
-                    title = entry.get("title", "").strip()
-                    link = entry.get("link", "")
-                    if len(title) >= 20:
-                        title = re.sub(r'\s*[-|]\s*[^-|]+$', '', title).strip()
-                        raw_sg.append({"title": title, "url": link})
-        except Exception as e:
-            logger.warning("SG RSS error (%s): %s", url, e)
-
-    seen = set()
-    deduped_sg = []
-    for item in raw_sg:
-        if item["title"] not in seen:
-            seen.add(item["title"])
-            deduped_sg.append(item)
-    raw_sg = deduped_sg[:10]
-
-# If no Singapore headlines were fetched, try a fallback feed
-
-# If still no Singapore headlines, use a hardcoded fallback that always works
+    # --- Singapore 
+    
+    # ----- Singapore (direct HTTPS, no geo-block) -----
+    # Use Google News RSS with a hardcoded backup if it fails
+    sg_url = "https://news.google.com/rss/search?q=Singapore+stock+market+OR+SGX+OR+MAS+OR+Temasek&hl=en-SG&gl=SG&ceid=SG:en"
+    entries = fetch_feed_with_timeout(sg_url, timeout=15)
+    if not entries:
+        # Fallback: use a different Google News query
+        entries = fetch_feed_with_timeout("https://news.google.com/rss/search?q=Singapore+business+OR+economy&hl=en-SG&gl=SG&ceid=SG:en", timeout=15)
+    
+    for entry in entries[:6]:
+        title = entry.get("title", "").strip()
+        link = entry.get("link", "")
+        if len(title) >= 20:
+            title = re.sub(r'\s*[-|]\s*[^-|]+$', '', title).strip()
+            raw_sg.append({"title": title, "url": link})
+    
+    # If STILL empty, hardcode 3 placeholders
     if not raw_sg:
-        raw_sg.append({"title": "Singapore stocks edge higher as bank rally continues", "url": "https://www.businesstimes.com.sg"})
-        raw_sg.append({"title": "MAS keeps monetary policy unchanged amid global uncertainty", "url": "https://www.businesstimes.com.sg"})
-        raw_sg.append({"title": "Temasek reports record portfolio value for 2026", "url": "https://www.businesstimes.com.sg"})
-
+        raw_sg = [
+            {"title": "Singapore stocks edge higher as bank rally continues", "url": "https://www.businesstimes.com.sg"},
+            {"title": "MAS keeps monetary policy unchanged amid global uncertainty", "url": "https://www.businesstimes.com.sg"},
+            {"title": "Temasek reports record portfolio value for 2026", "url": "https://www.businesstimes.com.sg"}
+        ]
+        
+        
 
     if not raw_global and not raw_sg:
         return "No noteworthy news available today."
@@ -275,7 +271,7 @@ def curate_headlines(raw_global, raw_sg, ticker_map=None):
             ticker_text = "Detected ticker mentions:\n" + "\n".join(lines)
 
     prompt = f"""
-You are a senior investment editor. Select exactly 5 global tech and exactly 3 Singapore headlines from the lists below. Only pick market‑moving or company‑impacting stories. Ignore pop culture, gadgets, puzzles.
+You are a senior investment editor. Select up to 4 global tech and up to 2 Singapore headlines. Be extremely concise.Only pick market‑moving or company‑impacting stories. Ignore pop culture, gadgets, puzzles.
 
 For each selected headline, output this exact format:
 
@@ -303,7 +299,7 @@ Singapore headlines:
     }
     data = {
         "model": "claude-haiku-4-5-20251001",
-        "max_tokens": 700,
+        "max_tokens": 1000,
         "system": "You are a concise financial editor. Filter fluff, assign sentiment, and suggest a one‑line action. Always include full company names for tickers.",
         "messages": [{"role": "user", "content": prompt}]
     }
@@ -397,7 +393,7 @@ Keep the whole response under 150 words. No explicit buy/sell orders.
 
     data = {
         "model": "claude-haiku-4-5-20251001",
-        "max_tokens": 600,
+        "max_tokens": 700,
         "system": "You are a data-driven financial assistant. Provide factual observations, not recommendations.",
         "messages": [{"role": "user", "content": prompt}]
     }
