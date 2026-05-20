@@ -181,16 +181,16 @@ def fetch_news():
     raw_global = []
     raw_sg = []
 
-SOURCE_TAGS = {
-    "techcrunch.com": "TC",
-    "theverge.com": "Verge",
-    "arstechnica.com": "Ars",
-    "channelnewsasia.com": "CNA",
-    "businesstimes.com.sg": "BT",
-    "news.google.com": "GNews",
-    "google.com": "GNews",
-    "onrender.com": "Render",     # fallback placeholder (not used normally)
-}
+    SOURCE_TAGS = {
+        "techcrunch.com": "TC",
+        "theverge.com": "Verge",
+        "arstechnica.com": "Ars",
+        "channelnewsasia.com": "CNA",
+        "businesstimes.com.sg": "BT",
+        "news.google.com": "GNews",
+        "google.com": "GNews",
+        "onrender.com": "Render",     # fallback placeholder (not used normally)
+    }
 
     # --- Global tech ---
     for url in GLOBAL_TECH_FEEDS:
