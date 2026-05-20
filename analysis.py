@@ -181,6 +181,16 @@ def fetch_news():
     raw_global = []
     raw_sg = []
 
+SOURCE_TAGS = {
+    "techcrunch.com": "TC",
+    "theverge.com": "Verge",
+    "arstechnica.com": "Ars",
+    "channelnewsasia.com": "CNA",
+    "businesstimes.com.sg": "BT",
+    "news.google.com": "GNews",
+    "google.com": "GNews",
+    "onrender.com": "Render",     # fallback placeholder (not used normally)
+}
 
     # --- Global tech ---
     for url in GLOBAL_TECH_FEEDS:
@@ -192,6 +202,18 @@ def fetch_news():
                     link = entry.get("link", "")
                     if len(title) >= 20:
                         title = re.sub(r'\s*[-|]\s*[^-|]+$', '', title).strip()
+                        # Determine source tag
+                        domain = ""
+                        for key, tag in SOURCE_TAGS.items():
+                            if key in url:
+                                domain = tag
+                                break
+                        if not domain:
+                            from urllib.parse import urlparse
+                            parsed = urlparse(url)
+                            domain = parsed.netloc.split(".")[-2][:6]   # rough abbreviation
+
+                        title = f"[{domain}] {title}"
                         raw_global.append({"title": title, "url": link})
         except Exception as e:
             logger.warning("Global RSS error (%s): %s", url, e)
@@ -219,6 +241,19 @@ def fetch_news():
         link = entry.get("link", "")
         if len(title) >= 20:
             title = re.sub(r'\s*[-|]\s*[^-|]+$', '', title).strip()
+            # Determine source tag
+            domain = ""
+            for key, tag in SOURCE_TAGS.items():
+                if key in url:
+                    domain = tag
+                    break
+            if not domain:
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                domain = parsed.netloc.split(".")[-2][:6]   # rough abbreviation
+
+            title = f"[{domain}] {title}"
+            
             raw_sg.append({"title": title, "url": link})
     
     # If STILL empty, hardcode 3 placeholders
@@ -240,14 +275,29 @@ def fetch_news():
 
     return curate_headlines(raw_global, raw_sg, ticker_map)
 
-def replace_tickers_with_names(text, name_map):
-    """Replace bare ticker symbols with SYMBOL (Name) format."""
+def enrich_ticker_names(text, name_map):
+    """
+    Replace known ticker symbols with 'SYMBOL (Name)' the first time
+    they appear in the text. Subsequent occurrences keep the symbol only.
+    """
     if not name_map:
         return text
-    for ticker, name in name_map.items():
-        if name:
-            # Replace "Watch: TICKER" or "Watch: TICKER," with "Watch: TICKER (Name)"
-            text = re.sub(rf'Watch:\s*{ticker}\b', f'Watch: {ticker} ({name})', text)
+
+    # Build a regex that matches any known ticker symbol as a whole word,
+    # including symbols with dots or digits (e.g., '0P0001MZ91.SI').
+    # We sort by length descending so longer patterns match first.
+    symbols = sorted(name_map.keys(), key=len, reverse=True)
+    for sym in symbols:
+        name = name_map[sym]
+        if not name:
+            continue
+        # Escape special regex characters in the symbol
+        escaped = re.escape(sym)
+        # Replace only the first occurrence with symbol + name,
+        # provided it is NOT already followed by a parenthesis (avoid double names).
+        pattern = rf'(?<!\w){escaped}(?!\w)(?!\s*\()'
+        replacement = f'{sym} ({name})'
+        text = re.sub(pattern, replacement, text, count=1)
     return text
 
 # ============================================================
@@ -311,7 +361,7 @@ Singapore headlines:
             curated = result["content"][0]["text"]
             # Post-process: force ticker names
             _, name_map = load_watchlist()
-            curated = replace_tickers_with_names(curated, name_map)
+            curated = enrich_ticker_names(curated, name_map)
             return re.sub(r'[^\x20-\x7E\n•_🟢🔴🟡\[\]()]', '', curated)
         else:
             return f"❌ Claude error: {resp.status_code}"
@@ -407,8 +457,11 @@ Keep the whole response under 150 words. No explicit buy/sell orders.
         )
         if response.status_code == 200:
             result = safe_parse_json(response.text)
-            logger.info("Claude stop_reason: %s", result.get('stop_reason', 'unknown'))
-            return result["content"][0]["text"]
+            text = result["content"][0]["text"]
+            _, name_map = load_watchlist()
+            text = enrich_ticker_names(text, name_map)
+            return text
+        
         else:
             return f"❌ Claude error: {response.status_code}"
     except Exception as e:
